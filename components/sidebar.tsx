@@ -12,7 +12,7 @@ export default function Sidebar({ currentPath = "/dashbaord" }: { currentPath: s
   ]
 
   return (
-    <div className='fix left-0 top-0 bg-gray-900 text-white w-64 min-h-screen p-6 z-10 overflow-hidden relative'>
+    <div className='fixed left-0 top-0 bg-neutral-950 text-white w-64 min-h-screen p-6 z-10 overflow-hidden'>
       {/* LOGO */}
       <div className='mb-8'>
         <div className='flex items-center space-x-2 mb-4'>
@@ -22,7 +22,7 @@ export default function Sidebar({ currentPath = "/dashbaord" }: { currentPath: s
       </div>
       <nav className='space-y-2'>
         <div className='text-sm
-          font-semibold text-gray-400 uppercase'>
+          font-semibold text-zinc-400 uppercase'>
           Inventory
         </div>
         {navigation.map((item, key) => {
@@ -30,8 +30,8 @@ export default function Sidebar({ currentPath = "/dashbaord" }: { currentPath: s
           const isActive = currentPath === item.href;
           return (
             <Link href={item.href} key={key} className={`flex items-center space-x-3 py-2 px-3 rounded-lg ${isActive
-              ? "bg-green-100 text-gray-800"
-              : "hover:bg-gray-800 text-gray-300"
+              ? "bg-green-100 text-zinc-800"
+              : "hover:bg-zinc-800 text-zinc-300"
               }`}>
               <IconComopnent className='w-5 h-5' />
               <span className='text-sm'>{item.name}</span>
@@ -39,7 +39,7 @@ export default function Sidebar({ currentPath = "/dashbaord" }: { currentPath: s
           )
         })}
       </nav>
-      <div className='absolute bottom-0 left-0 right-0 p-6 border-t border-gray-700 overflow-hidde'>
+      <div className='absolute bottom-0 left-0 right-0 p-6 border-t border-zinc-700 overflow-hidde'>
         <div className='flex items-center justify-between'>
           <UserButton showUserInfo />
         </div>
