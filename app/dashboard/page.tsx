@@ -63,7 +63,14 @@ export default async function DashboardPage() {
 
   const totalValue = allProducts.reduce((sum, product) => sum + Number(product.price) * Number(product.quantity), 0);
 
-  console.log(totalValue)
+  const inStockCount = allProducts.filter((p) => Number(p.quantity) > 5).length
+  const lowStockCount = allProducts.filter((p) => Number(p.quantity) <= 5 && Number(p.quantity) >= 1).length
+  const outOfStockCount = allProducts.filter((p) => Number(p.quantity) === 0).length
+
+  const inStockPercentage = totalProducts > 0 ? Math.round((inStockCount / totalProducts) * 100) : 0;
+  const lowStockPercentage = totalProducts > 0 ? Math.round((lowStock / totalProducts) * 100) : 0;
+  const outOfStockPercentage = totalProducts > 0 ? Math.round((outOfStockCount / totalProducts) * 100) : 0;
+
 
   return (
     <div className='min-h-screen bg-zinc-50'>
@@ -146,14 +153,14 @@ export default async function DashboardPage() {
 
                 // color array based on stock level
                 const bgColors = [
-                  "bg-red-600",
-                  "bg-yellow-600",
-                  "bg-green-600",
+                  "bg-red-500",
+                  "bg-yellow-500",
+                  "bg-green-500",
                 ]
                 const textColors = [
-                  "text-red-600",
-                  "text-yellow-600",
-                  "text-green-600",
+                  "text-red-500",
+                  "text-yellow-500",
+                  "text-green-500",
                 ]
                 return (
                   <div key={key} className='flex items-center justify-between p-3 rounded-lg bg-zinc-50'>
@@ -165,6 +172,53 @@ export default async function DashboardPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Efficiency Pie Chart */}
+          <div className='bg-white rounded-lg border border-zinc-200 p-6'>
+            <div className='felx items-center justify-between mb-6'>
+              <h2 className='text-lg font-semibold text-zinc-900'>Efficiency</h2>
+            </div>
+            <div className='flex items-center justify-center'>
+              <div className="relative w-48 h-48">
+                <div className="absolute inset-0 rounded-full border-8 border-gray-200"></div>
+                <div
+                  className="absolute inset-0 rounded-full border-8 border-green-400"
+                  style={{
+                    clipPath:
+                      "polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 50%)",
+                  }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {inStockPercentage}%
+                    </div>
+                    <div className="text-sm text-gray-600">In Stock</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className='mt-6 space-y-2'>
+              <div className='flex items-center justify-between text-sm text-zinc-600'>
+                <div className='flex items-center space-x-2'>
+                  <div className='w-3 h-3 rounded-full bg-green-400' />
+                  <span>In Stock ({inStockPercentage})%</span>
+                </div>
+              </div>
+              <div className='flex items-center justify-between text-sm text-zinc-600'>
+                <div className='flex items-center space-x-2'>
+                  <div className='w-3 h-3 rounded-full bg-green-200' />
+                  <span>Low Stock ({lowStockPercentage})%</span>
+                </div>
+              </div>
+              <div className='flex items-center justify-between text-sm text-zinc-600'>
+                <div className='flex items-center space-x-2'>
+                  <div className='w-3 h-3 rounded-full bg-zinc-200' />
+                  <span>Out of Stock ({outOfStockPercentage})%</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
