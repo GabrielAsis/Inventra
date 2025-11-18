@@ -1,3 +1,4 @@
+import ProductsChart from '@/components/products-chart';
 import Sidebar from '@/components/sidebar'
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma'
@@ -29,13 +30,38 @@ export default async function DashboardPage() {
     }),
   ])
 
+  const now = new Date()
+  const weeklyProductsData = []
+
+  for (let i = 11; i >= 0; i--) {
+    const weekStart = new Date(now)
+    weekStart.setDate(weekStart.getDate() - i * 7);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    const weekLabel = `${String(weekStart.getMonth() + 1).padStart(2, "0")}/${String(weekStart.getDate() + 1).padStart(2, "0")}`
+
+    const weekProducts = allProducts.filter((product) => {
+      const productDate = new Date(product.createdAt)
+      return productDate >= weekStart && productDate <= weekEnd;
+    });
+
+    weeklyProductsData.push({
+      week: weekLabel,
+      products: weekProducts.length,
+    })
+  }
+
   const recent = await prisma.product.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: 5,
   });
 
-  const totalValue = allProducts.reduce((sum, prodcut) => sum + Number(prodcut.price) * Number(prodcut.quantity), 0);
+  const totalValue = allProducts.reduce((sum, product) => sum + Number(product.price) * Number(product.quantity), 0);
 
   console.log(totalValue)
 
@@ -53,7 +79,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Grid */}
+        {/* Grid 1*/}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8'>
           {/* Metrics */}
           <div className='bg-white rounded-lg border border-zinc-200 p-6'>
@@ -90,12 +116,56 @@ export default async function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Inventory graph */}
+          <div className='bg-white rounded-lg border border-zinc-200 p-6'>
+            <div className="flex items-center justify-between mb-6">
+              <h2>New products per week</h2>
+            </div>
+            <div className='h-48'>
+              <ProductsChart data={weeklyProductsData} />
+            </div>
+          </div>
         </div>
 
+        {/* Grid 2 */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8'>
           {/* Stock Levels */}
-          <div>
+          <div className='bg-white rounded-lg border border-zinc-200 p-6'>
+            <div className='flex itmes-center justify-between mb-6'>
+              <h2 className='text-lg font-semibold text-zinc-900'>Stock Levels</h2>
+            </div>
+            <div className='space-y-3'>
+              {recent.map((product, key) => {
+                // checks stock level
+                const stockLevel = product.quantity === 0
+                  ? 0
+                  : product.quantity <= (product.lowStockAt || 5)
+                    ? 1
+                    : 2;
 
+                // color array based on stock level
+                const bgColors = [
+                  "bg-red-600",
+                  "bg-yellow-600",
+                  "bg-green-600",
+                ]
+                const textColors = [
+                  "text-red-600",
+                  "text-yellow-600",
+                  "text-green-600",
+                ]
+                return (
+                  <div key={key} className='flex items-center justify-between p-3 rounded-lg bg-zinc-50'>
+                    <div className='flex items-center space-x-3'>
+                      <div className={`w-3 h-3 rounded-full ${bgColors[stockLevel]}`} />
+                      <span className='text-sm font-medium text-zinc-'>{product.name}</span>
+                    </div>
+                    <div className={`text-sm font-medium ${textColors[stockLevel]}`}>{product.quantity} units</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </main>
