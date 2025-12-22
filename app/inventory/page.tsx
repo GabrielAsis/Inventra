@@ -2,12 +2,19 @@ import Sidebar from '@/components/sidebar'
 import { deleteProduct } from '@/lib/actions/products';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma'
+import { CaseSensitive, Search } from 'lucide-react';
 import React from 'react'
 
-export default async function InventoryPage({ }) {
+export default async function InventoryPage({ searchParams, }: {
+  searchParams: Promise<{ q?: String }>;
+}) {
   const user = await getCurrentUser()
   const userId = user.id;
-  const totalProducts = await prisma.product.findMany({ where: { userId } });
+
+  const params = await searchParams
+  const q = (params.q ?? "").trim();
+
+  const totalProducts = await prisma.product.findMany({ where: { userId, name: { contains: q, mode: "insensitive" } } });
 
 
   return (
@@ -24,8 +31,16 @@ export default async function InventoryPage({ }) {
         </div>
 
         <div className='space-y-6'>
+          {/* SEARCH */}
+          <div className='bg-white rounded-lg border-zinc-200 p-6'>
+            <form action="/inventory" className='flex' method='GET'>
+              <input name='q' placeholder='Search Products..' className='flex-1 px-4 py-2 border border-zinc-300 rounded-lg rounded-tr-none rounded-br-none focus:border-transparent border-r-transparent' />
+              <button className='p-3 bg-green-500 text-white rounded-lg rounded-tl-none rounded-bl-none hover:bg-green-700 hover:cursor-pointer'><Search size={18} strokeWidth={3} /></button>
+            </form>
+          </div>
+
           {/* PRODUCTS TABLE */}
-          <div className='bg-white rounded-lg border border-zinc-200 overlfow-hidden'>
+          <div className='bg-white rounded-lg border border-zinc-200 overflow-hidden'>
             <table className='w-full'>
               <thead className='bg-zinc-50'>
                 <tr>
