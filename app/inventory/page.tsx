@@ -1,3 +1,4 @@
+import Pagination from '@/components/pagination';
 import Sidebar from '@/components/sidebar'
 import { deleteProduct } from '@/lib/actions/products';
 import { getCurrentUser } from '@/lib/auth';
@@ -6,7 +7,7 @@ import { CaseSensitive, Search } from 'lucide-react';
 import React from 'react'
 
 export default async function InventoryPage({ searchParams, }: {
-  searchParams: Promise<{ q?: String }>;
+  searchParams: Promise<{ q?: string, page?: string }>;
 }) {
   const user = await getCurrentUser()
   const userId = user.id;
@@ -14,8 +15,27 @@ export default async function InventoryPage({ searchParams, }: {
   const params = await searchParams
   const q = (params.q ?? "").trim();
 
-  const totalProducts = await prisma.product.findMany({ where: { userId, name: { contains: q, mode: "insensitive" } } });
+  const pageSize = 6;
 
+  const page = Math.max(1, Number(params.page ?? 1));
+
+  const where = {
+    userId,
+    ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
+  }
+
+  const totalProducts = await prisma.product.findMany({ where, });
+
+  const [totalCount, items] = await Promise.all([
+    prisma.product.count({ where }), await prisma.product.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    })
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
     <div className='min-h-screen bg-zinc-50'>
@@ -44,24 +64,24 @@ export default async function InventoryPage({ searchParams, }: {
             <table className='w-full'>
               <thead className='bg-zinc-50'>
                 <tr>
-                  <th className='px-6 py-6 text-left text-xs font-medium text-zinc-500 uppercase'>Name</th>
-                  <th className='px-6 py-6 text-left text-xs font-medium text-zinc-500 uppercase'>SKU</th>
-                  <th className='px-6 py-6 text-left text-xs font-medium text-zinc-500 uppercase'>Price</th>
-                  <th className='px-6 py-6 text-left text-xs font-medium text-zinc-500 uppercase'>Quantity</th>
-                  <th className='px-6 py-6 text-left text-xs font-medium text-zinc-500 uppercase'>Low Stock</th>
-                  <th className='px-6 py-6 text-left text-xs font-medium text-zinc-500 uppercase'>Actions</th>
+                  <th className='px-5 py-4 text-left text-xs font-medium text-zinc-500 uppercase'>Name</th>
+                  <th className='px-5 py-4 text-left text-xs font-medium text-zinc-500 uppercase'>SKU</th>
+                  <th className='px-5 py-4 text-left text-xs font-medium text-zinc-500 uppercase'>Price</th>
+                  <th className='px-5 py-4 text-left text-xs font-medium text-zinc-500 uppercase'>Quantity</th>
+                  <th className='px-5 py-4 text-left text-xs font-medium text-zinc-500 uppercase'>Low Stock</th>
+                  <th className='px-5 py-4 text-left text-xs font-medium text-zinc-500 uppercase'>Actions</th>
                 </tr>
               </thead>
 
               <tbody className='bg-white divide-y divide-zinc-200'>
-                {totalProducts.map((product, key) => (
+                {items.map((product, key) => (
                   <tr key={key} className='hover:bg-zinc-50'>
-                    <td className='px-6 py-4 text-sm text-zinc-500 '>{product.name}</td>
-                    <td className='px-6 py-4 text-sm text-zinc-500 '>{product.sku || "-"}</td>
-                    <td className='px-6 py-4 text-sm text-zinc-500 '>${Number(product.price).toFixed(2)}</td>
-                    <td className='px-6 py-4 text-sm text-zinc-500 '>{product.quantity}</td>
-                    <td className='px-6 py-4 text-sm text-zinc-500 '>{product.lowStockAt || "-"}</td>
-                    <td className='px-6 py-4 text-sm text-zinc-500 '>
+                    <td className='px-5 py-4 text-sm text-zinc-500 '>{product.name}</td>
+                    <td className='px-5 py-4 text-sm text-zinc-500 '>{product.sku || "-"}</td>
+                    <td className='px-5 py-4 text-sm text-zinc-500 '>${Number(product.price).toFixed(2)}</td>
+                    <td className='px-5 py-4 text-sm text-zinc-500 '>{product.quantity}</td>
+                    <td className='px-5 py-4 text-sm text-zinc-500 '>{product.lowStockAt || "-"}</td>
+                    <td className='px-5 py-4 text-sm text-zinc-500 '>
                       <form action={async (formData: FormData) => {
                         "use server";
                         await deleteProduct(formData);
@@ -75,6 +95,19 @@ export default async function InventoryPage({ searchParams, }: {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 &&
+            <div className='bg-white rounded-lg border border-zinc-200 p-6'>
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                baseUrl='/inventory'
+                searchParams={{
+                  q,
+                  pageSize: String(pageSize),
+                }}
+              />
+            </div>}
         </div>
       </main>
     </div>
